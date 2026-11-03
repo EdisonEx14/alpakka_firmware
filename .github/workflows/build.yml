@@ -7,6 +7,9 @@ on:
   # Manual trigger on UI.
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -59,26 +62,12 @@ jobs:
           shasum dongle_marmota_${VERSION}.uf2
 
           echo -e "\
-          =================================
-          This firmware build was automated
-          =================================
-
-          Branch / Tag:
-          ${GITHUB_REF}
-
-          Commit:
-          ${GITHUB_SHA}
-
-          Checksums:
-          \$ shasum alpakka_pico_${VERSION}.uf2
+          =================================\n          This firmware build was automated\n          =================================\n\n          Branch / Tag:\n          ${GITHUB_REF}\n\n          Commit:\n          ${GITHUB_SHA}\n\n          Checksums:\n          \$ shasum alpakka_pico_${VERSION}.uf2
           $(cat alpakka_pico_${VERSION}.uf2 | shasum | head -c 40)
           \$ shasum alpakka_marmota_${VERSION}.uf2
           $(cat alpakka_marmota_${VERSION}.uf2 | shasum | head -c 40)
           \$ shasum dongle_marmota_${VERSION}.uf2
-          $(cat dongle_marmota_${VERSION}.uf2 | shasum | head -c 40)
-
-          Job:
-          ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+          $(cat dongle_marmota_${VERSION}.uf2 | shasum | head -c 40)\n\n          Job:\n          ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
           " > metadata.txt
 
       - name: Upload artifacts
@@ -90,3 +79,21 @@ jobs:
             alpakka_marmota_${{env.VERSION}}.uf2
             dongle_marmota_${{env.VERSION}}.uf2
             metadata.txt
+
+      # Publish the Pico (v0) uf2 straight into the repository so it can be
+      # downloaded without the Actions artifact auth. The [skip ci] token
+      # prevents this very commit from re-triggering the workflow.
+      - name: Publish v0 uf2 into repo (bin/)
+        run: |
+          set -e
+          mkdir -p bin
+          cp alpakka_pico_${VERSION}.uf2 bin/alpakka_pico_gp1.uf2
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add bin/alpakka_pico_gp1.uf2
+          if git diff --cached --quiet; then
+            echo "Firmware unchanged, nothing to publish."
+          else
+            git commit -m "chore: publish v0 GP1 stick-push build ${GITHUB_SHA::8} [skip ci]"
+            git push
+          fi
