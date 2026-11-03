@@ -28,7 +28,7 @@ const uint8_t PIN_PUSH = index ? PIN_R3 : PIN_L3;
 Button_from_ctrl(PIN_PUSH, ctrl->sections[SECTION_STICK_PUSH])
 ```
 
-so the left push becomes `Button_(1, ...)`, which lands in the"board GPIO"
+so the left push becomes `Button_(1, ...)`, which lands in the "board GPIO"
 branch of `Button__is_pressed()`:
 
 ```c
@@ -36,6 +36,10 @@ else if (is_between(self->pin, PIN_GROUP_BOARD, PIN_GROUP_BOARD_END)) {
     return !gpio_get(self->pin);   // active low, internal pull-up
 }
 ```
+
+`is_between()` is inclusive on both ends (`value >= a && value <= b` when
+`a < b`), so pin `1` is inside the `PIN_GROUP_BOARD (1) .. PIN_GROUP_BOARD_END (99)`
+group and is read as a real GPIO.
 
 No other file needs to change.
 
@@ -53,8 +57,8 @@ DEVICE=alpakka_v0 make
 make load
 ```
 
-`make test` (or `T` over the serial session) now asks for`Thumbstick Push`, which
-accepts the press on GP1.
+`make test` (or `T` over the serial session) now asks for `Thumbstick Push`,
+which accepts the press on GP1.
 
 ## Changing what the press does (web configurator)
 
