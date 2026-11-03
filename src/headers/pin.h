@@ -42,6 +42,9 @@ Pin numbers from 200 to 215 are IO Expander 2, from pin 0 to pin 15.
     #define PIN_THUMBSTICK_LX 27
     #define PIN_THUMBSTICK_RY 0
     #define PIN_THUMBSTICK_RX 0
+    // Left thumbstick push switch.
+    // CUSTOM PATCH: read from Pico GP1 instead of IO expander #1 bit 12 (P14).
+    #define PIN_L3 1
     // Expanders.
     #define PIN_SELECT_1 114
     #define PIN_SELECT_2 113
@@ -51,7 +54,7 @@ Pin numbers from 200 to 215 are IO Expander 2, from pin 0 to pin 15.
     #define PIN_DPAD_DOWN 100
     #define PIN_L1 102
     #define PIN_L2 115
-    #define PIN_L3 112
+    // PIN_L3 (left thumbstick push) is defined above, among the board GPIOs.
     #define PIN_L4 109
     #define PIN_PCBGEN_0 111
     #define PIN_PCBGEN_1 110
