@@ -32,8 +32,13 @@ Pin numbers from 200 to 215 are IO Expander 2, from pin 0 to pin 15.
     #define PIN_SPI_CK 10
     #define PIN_SPI_TX 11
     #define PIN_SPI_RX 12
-    #define PIN_I2C_SDA 14
-    #define PIN_I2C_SCL 15
+    // CUSTOM PATCH: GP14 and GP15 are no longer used as the I2C bus that talks
+    // to the two IO expanders. They are repurposed as physical buttons.
+    // This build assumes no IO expanders are installed, so the whole I2C path
+    // is disabled (see PIN_I2C_DISABLED below and the guards in bus.c).
+    #define PIN_I2C_SDA PIN_NONE
+    #define PIN_I2C_SCL PIN_NONE
+    #define PIN_I2C_DISABLED 1
     #define PIN_SPI_CS0 18
     #define PIN_SPI_CS1 19
     #define PIN_HOME 20
@@ -51,8 +56,10 @@ Pin numbers from 200 to 215 are IO Expander 2, from pin 0 to pin 15.
     #define PIN_DPAD_DOWN 100
     #define PIN_L1 102
     #define PIN_L2 115
-    #define PIN_L3 112
-    #define PIN_L4 109
+    // CUSTOM PATCH: stick push moved from IO expander 1 pin 12 to GPIO15.
+    #define PIN_L3 15
+    // CUSTOM PATCH: L4 moved from IO expander 1 pin 9 to GPIO14.
+    #define PIN_L4 14
     #define PIN_PCBGEN_0 111
     #define PIN_PCBGEN_1 110
     #define PIN_START_1 200
