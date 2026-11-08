@@ -71,8 +71,16 @@ void bus_i2c_io_pcb_gen_determine() {
 }
 
 void bus_i2c_io_cache_update() {
-    io_cache_0 = bus_i2c_read_two(I2C_IO_0, I2C_IO_REG_INPUT);
-    io_cache_1 = bus_i2c_read_two(I2C_IO_1, I2C_IO_REG_INPUT);
+    #ifdef PIN_I2C_DISABLED
+        // CUSTOM PATCH: No IO expanders in this build. Keep the cache at zero
+        // so every expander button reads as "not pressed" for free, without
+        // touching the (now repurposed) I2C pins.
+        io_cache_0 = 0;
+        io_cache_1 = 0;
+    #else
+        io_cache_0 = bus_i2c_read_two(I2C_IO_0, I2C_IO_REG_INPUT);
+        io_cache_1 = bus_i2c_read_two(I2C_IO_1, I2C_IO_REG_INPUT);
+    #endif
 }
 
 bool bus_i2c_io_cache_read(uint8_t device_index, uint8_t bit_index) {
@@ -114,16 +122,23 @@ uint8_t bus_spi_read_one(uint8_t cs, uint8_t reg) {
 }
 
 void bus_i2c_init() {
-    info("INIT: I2C bus\n");
-    i2c_init(I2C_CHANNEL, I2C_FREQ);
-    gpio_set_function(PIN_I2C_SDA, GPIO_FUNC_I2C);
-    gpio_set_function(PIN_I2C_SCL, GPIO_FUNC_I2C);
-    gpio_pull_up(PIN_I2C_SDA);
-    gpio_pull_up(PIN_I2C_SCL);
-    if (!gpio_get(PIN_I2C_SDA) || !gpio_get(PIN_I2C_SCL)) {
-        error("I2C bus is not clean, unplug the controller\n");
-        exit(1);
-    }
+    #ifdef PIN_I2C_DISABLED
+        // CUSTOM PATCH: The I2C pins are repurposed as buttons in this build.
+        // Initializing the I2C peripheral would mux those pins away from the
+        // GPIO function, so the whole bus must be skipped.
+        info("INIT: I2C bus (disabled)\n");
+    #else
+        info("INIT: I2C bus\n");
+        i2c_init(I2C_CHANNEL, I2C_FREQ);
+        gpio_set_function(PIN_I2C_SDA, GPIO_FUNC_I2C);
+        gpio_set_function(PIN_I2C_SCL, GPIO_FUNC_I2C);
+        gpio_pull_up(PIN_I2C_SDA);
+        gpio_pull_up(PIN_I2C_SCL);
+        if (!gpio_get(PIN_I2C_SDA) || !gpio_get(PIN_I2C_SCL)) {
+            error("I2C bus is not clean, unplug the controller\n");
+            exit(1);
+        }
+    #endif
 }
 
 void bus_i2c_io_init_single(uint8_t id) {
@@ -138,11 +153,19 @@ void bus_i2c_io_init_single(uint8_t id) {
 }
 
 void bus_i2c_io_init() {
-    info("INIT: I2C IO\n");
-    bus_i2c_io_pcb_gen_determine();
-    info("  PCB GEN: gen-%i\n", config_get_pcb_gen());
-    bus_i2c_io_init_single(I2C_IO_0);
-    bus_i2c_io_init_single(I2C_IO_1);
+    #ifdef PIN_I2C_DISABLED
+        // CUSTOM PATCH: Without expanders the PCB generation cannot be probed,
+        // but the firmware requires a valid value before any touch code runs
+        // (config_get_pcb_gen() calls exit(1) when the value is still 255).
+        config_set_pcb_gen(0);
+        info("INIT: I2C IO (disabled, PCB gen 0)\n");
+    #else
+        info("INIT: I2C IO\n");
+        bus_i2c_io_pcb_gen_determine();
+        info("  PCB GEN: gen-%i\n", config_get_pcb_gen());
+        bus_i2c_io_init_single(I2C_IO_0);
+        bus_i2c_io_init_single(I2C_IO_1);
+    #endif
 }
 
 void bus_spi_init() {
