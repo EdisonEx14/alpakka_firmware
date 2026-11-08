@@ -173,6 +173,16 @@ void loop_dongle_init() {
 void loop_controller_task() {
     // Write flash if needed.
     config_sync();
+    // CUSTOM PATCH: Release everything that the previous profile was holding.
+    // Without this, inputs that were pressed by a profile that is no longer
+    // active (for example a thumbstick direction mapped to a keyboard key)
+    // never receive their release event, and get stuck in the OS forever.
+    static uint8_t last_profile_index = 255;
+    uint8_t current_profile_index = profile_get_active_index(false);
+    if (current_profile_index != last_profile_index) {
+        if (last_profile_index != 255) profile_reset_all();
+        last_profile_index = current_profile_index;
+    }
     // Gather values for input sources.
     profile_report_active();
     // Report to the correct channel.
@@ -266,7 +276,7 @@ void loop_run() {
             average += used;
             if (used > max) max = used;
             if (!(i % CFG_TICK_FREQUENCY)) {
-                info("Loop: avg=%.0f max=%.0f\n", average/1000, max);
+                info("Loop: avg=%.0f max=%.0f\n", average/1000, max/1000);
                 average = max = 0;
             }
         }
